@@ -1,85 +1,91 @@
-var ms = 0, s = 0, m = 0, h = 0
-var timer;
+let interval;
+let startTime;
+let offset = 0;
+let splitTimes = [];
 
-var display = document.querySelector(".timer-Display")
-var laps = document.querySelector(".laps")
-
-
-function start(){
-    if(!timer){
-        timer = setInterval(run, 10)
+function start() {
+    if (!interval) {
+        startTime = Date.now() - offset;
+        interval = setInterval(updateTimer, 1000);
     }
 }
 
-function run(){
-    display.innerHTML = getTimer()
-    ms++              
-    if(ms == 100){
-        ms = 0
-        s++
+function pause() {
+    if (interval) {
+        clearInterval(interval);
+        interval = null;
+        offset = Date.now() - startTime;
     }
-    if(s == 60){
-        s = 0
-        m++
-    }
-    if(m == 60){
-        m = 0
-        h++
-    }
-    
-    if(h == 13){
-        h = 1
-    } 
 }
 
-function getTimer(){
-    return (h<10 ? "0" + h: h) + " : " + (m<10 ? "0" + m : m) + " : " + (s<10 ? "0" + s : s) + " : " + (ms<10 ? "0" + ms : ms); 
+function reset() {
+    clearInterval(interval);
+    interval = null;
+    offset = 0;
+    startTime = 0;
+    updateTimer();
+    resetLap();
 }
 
-
-
-function pause(){
-    stopTimer()  
+function restart() {
+    reset();
+    start();
 }
 
-function stopTimer(){
-    clearInterval(timer)
-    timer = false 
-}
-
-
-
-
-function reset(){
-    stopTimer()
-    ms = 0
-    s = 0
-    m = 0
-    h = 0
-    display.innerHTML = getTimer()
-}
-
-
-
-
-function restart(){
-    if(timer){ 
-        reset()
-        start()
-    }
-    
-}
-
-
-// lap = taking screenshot of current time...
 function lap() {
-    if(timer) {   
-        var Li = document.createElement("li")   
-        Li.innerHTML = getTimer() 
-        laps.appendChild(Li) 
+    if (interval) {
+        const currentTime = getTime();
+        splitTimes.push(currentTime);
+        updateLapList();
     }
 }
 
-function resetLap(){
-    laps.innerHTML = ""
+function split() {
+    if (interval) {
+        const currentTime = getTime();
+        splitTimes.push(currentTime);
+        updateLapList();
+    }
+}
+
+function resetLap() {
+    splitTimes = [];
+    updateLapList();
+}
+
+function getTime() {
+    const now = Date.now();
+    const elapsedTime = now - startTime + offset;
+    return millisecondsToTime(elapsedTime);
+}
+
+function millisecondsToTime(ms) {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    const remainingSeconds = seconds % 60;
+    const remainingMinutes = minutes % 60;
+    const remainingHours = hours % 24;
+
+    const formattedTime = `${days}:${remainingHours}:${remainingMinutes}:${remainingSeconds}`;
+    return formattedTime;
+}
+
+function updateTimer() {
+    const timerDisplay = document.querySelector(".timer-Display");
+    const elapsedTime = getTime();
+    timerDisplay.textContent = elapsedTime;
+}
+
+function updateLapList() {
+    const lapList = document.querySelector(".laps");
+    lapList.innerHTML = "";
+
+    for (let i = 0; i < splitTimes.length; i++) {
+        const lapItem = document.createElement("li");
+        lapItem.innerText = `Lap ${i + 1}: ${splitTimes[i]}`;
+        lapList.appendChild(lapItem);
+    }
 }
